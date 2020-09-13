@@ -233,7 +233,12 @@ void button(const std::string& button, const char* tooltip, int controller = 0) 
     }
 
     const float iconSize = 20.f;
-    drawImage(getImage(button, avocado::assetsPath("buttons/")), iconSize);
+    auto buttonImage = getImage(button, avocado::assetsPath("buttons/"));
+    if (buttonImage) {
+        drawImage(buttonImage, iconSize);
+    } else {
+        ImGui::TextUnformatted(button.c_str());
+    }
     if (ImGui::IsItemHovered() && tooltip != nullptr) {
         ImGui::BeginTooltip();
         ImGui::TextUnformatted(tooltip);
