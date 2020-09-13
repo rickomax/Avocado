@@ -586,11 +586,9 @@ struct Screenshot {
         stream << "vt " << std::setprecision(6) << u << " " << std::setprecision(6) << 1.0f - v << "\n";
         stream << "vn " << std::setprecision(6) << normal.x << " " << std::setprecision(6) << normal.y << " " << std::setprecision(6)
                << normal.z << "\n";
-        stream << "v " << std::setprecision(6) << x << " " << std::setprecision(6) << y << " " << std::setprecision(6) << z << "\n";
-        //        << " "
-        //               << std::setprecision(6) << std::min(r * multiplicator, 1.0f) << " " << std::setprecision(6)
-        //               << std::min(g * multiplicator, 1.0f) << " "
-        //               << std::setprecision(6) << std::min(b * multiplicator, 1.0f) << "\n";
+        stream << "v " << std::setprecision(6) << x << " " << std::setprecision(6) << y << " " << std::setprecision(6) << z << " "
+               << std::setprecision(6) << std::min(r * multiplicator, 1.0f) << " " << std::setprecision(6)
+               << std::min(g * multiplicator, 1.0f) << " " << std::setprecision(6) << std::min(b * multiplicator, 1.0f) << "\n";
 
         stream2 << "vt " << (int)(u * 255) << " " << (int)(v * 255) - v << "\n";
         stream2 << "vn " << std::setprecision(6) << (int)(normal.x * 4096) << " " << std::setprecision(6) << (int)(normal.y * 4096) << " "
