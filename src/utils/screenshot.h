@@ -612,18 +612,14 @@ struct Screenshot {
         cleanUp();
     }
 
-    void groupFace(std::map<uint32_t, std::vector<ScreenshotFace *>> *groups, ScreenshotVertex *screenshotVertex,
-                   ScreenshotFace *screenshotFace) {
-        std::vector<ScreenshotFace *> f;
-        uint32_t group = groupObjects ? screenshotVertex->group : 0;
-        auto it = groups->find(group);
-        if (it == groups->end()) {
-            f = std::vector<ScreenshotFace *>();
-            f.push_back(screenshotFace);
-            groups->emplace(std::pair<uint32_t, std::vector<ScreenshotFace *>>(group, f));
+    void groupFace(std::map<uint32_t, std::vector<ScreenshotFace>> &groups, ScreenshotVertex &screenshotVertex,
+                   ScreenshotFace &screenshotFace) {
+        uint32_t groupNumber = groupObjects ? screenshotVertex.group : 0;
+        auto group = groups.find(groupNumber);
+        if (group == groups.end()) {
+            groups.emplace(groupNumber, std::vector<ScreenshotFace>{screenshotFace});
         } else {
-            f = it->second;
-            f.push_back(screenshotFace);
+            group->second.push_back(screenshotFace);
         }
     }
 
@@ -704,23 +700,22 @@ struct Screenshot {
                                                      it->g[2] / 255.0f, it->b[2] / 255.0f, it->s[2] / 255.0f, it->t[2] / 255.0f,
                                                      v2.originalX, v2.originalY, v2.originalZ, v2.group, v2.depth, normal, it->comp);
                     }
-                    std::map<uint32_t, std::vector<ScreenshotFace *>> groups;
-                    for (auto it = faceBuffer.begin(); it != faceBuffer.end(); it++) {
-                        ScreenshotVertex v0 = vertexBuffer[it->v[0]];
-                        ScreenshotVertex v1 = vertexBuffer[it->v[1]];
-                        ScreenshotVertex v2 = vertexBuffer[it->v[2]];
-                        groupFace(&groups, &v0, &*it);
-                        groupFace(&groups, &v1, &*it);
-                        groupFace(&groups, &v2, &*it);
+                    std::map<uint32_t, std::vector<ScreenshotFace>> groups;
+                    for (auto it : faceBuffer) {
+                        ScreenshotVertex v0 = vertexBuffer[it.v[0]];
+                        ScreenshotVertex v1 = vertexBuffer[it.v[1]];
+                        ScreenshotVertex v2 = vertexBuffer[it.v[2]];
+                        groupFace(groups, v0, it);
+                        groupFace(groups, v1, it);
+                        groupFace(groups, v2, it);
                     }
                     for (auto it = groups.begin(); it != groups.end(); it++) {
                         stream << "g geometry_" << it->first << "\n";
-                        for (auto it2 = it->second.begin(); it2 != it->second.end(); it2++) {
-                            ScreenshotFace *screenshotFace = (*it2);
-                            uint32_t vremap0 = screenshotFace->vremap[0];
-                            uint32_t vremap1 = screenshotFace->vremap[1];
-                            uint32_t vremap2 = screenshotFace->vremap[2];
-                            uint32_t textureIndex = getTextureIndex(screenshotFace->tpageX, screenshotFace->tpageY);
+                        for (ScreenshotFace screenshotFace : it->second) {
+                            uint32_t vremap0 = screenshotFace.vremap[0];
+                            uint32_t vremap1 = screenshotFace.vremap[1];
+                            uint32_t vremap2 = screenshotFace.vremap[2];
+                            uint32_t textureIndex = getTextureIndex(screenshotFace.tpageX, screenshotFace.tpageY);
                             // uint32_t pageId = GETTPAGE(screenshotFace->tpageX, screenshotFace->tpageY);
                             stream << "usemtl output_" + std::to_string(frameIndex) << "_" << textureIndex << "\n";
                             stream << "f " << vremap0 << "/" << vremap0 << "/" << vremap0 << " " << vremap1 << "/" << vremap1 << "/"
