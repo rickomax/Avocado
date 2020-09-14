@@ -1,3 +1,4 @@
+#include <climits>
 #include <string>
 #include <fstream>
 #include <vector>
@@ -52,11 +53,11 @@ struct Gameshark {
                 char *end;
                 GamesharkCode code;
                 code.opcode = std::strtoul(line.substr(0, 2).c_str(), &end, 16);
-                if (code.opcode == ULONG_MAX) {
+                if (code.opcode == UINT_MAX) {
                     continue;
                 }
                 code.address = std::strtoul(line.substr(2, 6).c_str(), &end, 16);
-                if (code.address == ULONG_MAX) {
+                if (code.address == UINT_MAX) {
                     continue;
                 }
                 std::string space = line.substr(8, 1);
@@ -64,7 +65,7 @@ struct Gameshark {
                     continue;
                 }
                 code.value = std::strtoul(line.substr(9, 4).c_str(), &end, 16);
-                if (code.value == ULONG_MAX) {
+                if (code.value == UINT_MAX) {
                     continue;
                 }
                 gamesharkCheat.codes.push_back(code);
