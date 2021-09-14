@@ -54,6 +54,13 @@ struct Vibration {
     uint8_t big;
 };
 }  // namespace Controller
+
+namespace Screenshot {
+struct Save {
+    std::string path;
+    bool reset;
+};
+}  // namespace Screenshot
 };  // namespace Event
 
 void toast(const std::string& message);

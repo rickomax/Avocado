@@ -103,8 +103,8 @@ class GTE {
 
     // Internal operations and helpers
     void multiplyVectors(gte::Vector<int16_t> v1, gte::Vector<int16_t> v2, gte::Vector<int16_t> tr = gte::Vector<int16_t>(0));
-    void multiplyMatrixByVector(gte::Matrix m, gte::Vector<int16_t> v, gte::Vector<int32_t> tr = gte::Vector<int32_t>(0));
-    int64_t multiplyMatrixByVectorRTP(gte::Matrix m, gte::Vector<int16_t> v, gte::Vector<int32_t> tr);
+    void applyMatrix(gte::Matrix m, gte::Vector<int16_t> v, gte::Vector<int32_t> tr = gte::Vector<int32_t>(0));
+    int64_t applyMatrixRTP(gte::Matrix m, gte::Vector<int16_t> v, gte::Vector<int32_t> tr);
 
     int countLeadingZeroes(uint32_t n);
     size_t countLeadingZeroes16(uint16_t n);
@@ -149,7 +149,7 @@ class GTE {
     void dpcs(bool useRGB0 = false);
     void dcpl();
     void intpl();
-    void rtps(int n = 0, bool setMAC0 = true);
+    void rtps(int n = 0, bool setMAC0 = true, bool fromRTPT = false);
     void rtpt();
     void avsz3();
     void avsz4();

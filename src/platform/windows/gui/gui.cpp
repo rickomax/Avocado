@@ -1,7 +1,10 @@
 #include "gui.h"
 #include <fmt/core.h>
 #include <imgui.h>
+#include <imgui_internal.h>
 #include <platform/windows/utils/platform_tools.h>
+#include <utils/free_cam.h>
+
 #include "config.h"
 #include "imgui/imgui_impl_opengl3.h"
 #include "imgui/imgui_impl_sdl.h"
@@ -11,6 +14,8 @@
 #include "state/state.h"
 #include "utils/file.h"
 #include "utils/string.h"
+#include "utils/screenshot.h"
+#include "utils/gameshark.h"
 #include "images.h"
 
 float GUI::scale = 1.f;
@@ -205,7 +210,7 @@ void GUI::mainMenu(std::unique_ptr<System>& sys) {
         if (ImGui::MenuItem("Dump state")) {
             sys->dumpRam();
             sys->spu->dumpRam();
-            sys->gpu->dumpVram();
+            sys->gpu->dumpVram("vram.png");
             toast("State dumped");
         }
         ImGui::EndMenu();
@@ -237,6 +242,136 @@ void GUI::mainMenu(std::unique_ptr<System>& sys) {
 
         ImGui::EndMenu();
     }
+    if (ImGui::BeginMenu("Free Camera")) {
+        FreeCamera* free_camera = FreeCamera::getInstance();
+        ImGui::PushItemFlag(ImGuiItemFlags_SelectableDontClosePopup, true);
+        ImGui::MenuItem("Enabled", nullptr, &free_camera->enabled);
+        ImGui::PopItemFlag();
+        ImGui::Separator();
+        ImGui::SliderInt("Base Rotation X", &free_camera->base_rotationX, -180, 180);
+        ImGui::SliderInt("Base Rotation Y", &free_camera->base_rotationY, -180, 180);
+        ImGui::SliderInt("Base Rotation Z", &free_camera->base_rotationZ, -180, 180);
+        ImGui::PushItemFlag(ImGuiItemFlags_SelectableDontClosePopup, true);
+        if (ImGui::Button("Set Current Rotation as Base")) {
+            free_camera->saveBase();
+        }
+        ImGui::PopItemFlag();
+        ImGui::Separator();
+        ImGui::SliderInt("Speed", &free_camera->cameraSpeed, 1, 500);
+        ImGui::Separator();
+        ImGui::SliderInt("Rotation X", &free_camera->rotationX, -180, 180);
+        ImGui::SliderInt("Rotation Y", &free_camera->rotationY, -180, 180);
+        ImGui::SliderInt("Rotation Z", &free_camera->rotationZ, -180, 180);
+        ImGui::InputInt("Translation X", &free_camera->translationX);
+        ImGui::InputInt("Translation Y", &free_camera->translationY);
+        ImGui::InputInt("Translation Z", &free_camera->translationZ);
+        ImGui::SliderInt("Projection Distance", &free_camera->translationH, -1000, 1000);
+        ImGui::Separator();
+        ImGui::PushItemFlag(ImGuiItemFlags_SelectableDontClosePopup, true);
+        if (ImGui::Button("Reset")) {
+            free_camera->resetMatrices();
+        }
+        ImGui::PopItemFlag();
+        ImGui::EndMenu();
+    }
+    if (ImGui::BeginMenu("3D Screenshot")) {
+        Screenshot* screenshot = Screenshot::getInstance();
+        ImGui::SliderInt("Frames to Capture", &screenshot->captureFrames, 1, 20);
+        ImGui::Separator();
+        ImGui::SliderInt("Horizontal Scale (%)", &screenshot->horizontalScale, 1, 1000);
+        ImGui::SliderInt("Vertical Scale (%)", &screenshot->verticalScale, 1, 1000);
+        ImGui::SliderInt("Depth Scale (%)", &screenshot->depthScale, 1, 1000);
+        ImGui::Separator();
+        ImGui::PushItemFlag(ImGuiItemFlags_SelectableDontClosePopup, true);
+        ImGui::MenuItem("Debug Mode", nullptr, &screenshot->debug);
+        ImGui::PopItemFlag();
+        ImGui::Separator();
+        ImGui::PushItemFlag(ImGuiItemFlags_SelectableDontClosePopup, true);
+        ImGui::MenuItem("Apply Aspect Ratio", nullptr, &screenshot->applyAspectRatio);
+        ImGui::PopItemFlag();
+        if (screenshot->applyAspectRatio) {
+            ImGui::Value("Aspect Ratio",
+                         (float)sys->gpu.get()->gp1_08.getHorizontalResoulution() / (float)sys->gpu.get()->gp1_08.getVerticalResoulution());
+            ImGui::Separator();
+        }
+        ImGui::PushItemFlag(ImGuiItemFlags_SelectableDontClosePopup, true);
+        ImGui::MenuItem("Vertex Only", nullptr, &screenshot->vertexOnly);
+        ImGui::PopItemFlag();
+        ImGui::PushItemFlag(ImGuiItemFlags_SelectableDontClosePopup, true);
+        ImGui::MenuItem("Original Positions (No Perspective/Distortion)", nullptr, &screenshot->dontTransform);
+        ImGui::PopItemFlag();
+        if (screenshot->dontTransform && !screenshot->vertexOnly) {
+            ImGui::PushItemFlag(ImGuiItemFlags_SelectableDontClosePopup, true);
+            ImGui::MenuItem("Dont Project Triangles (UV Discarded)", nullptr, &screenshot->dontProject);
+            ImGui::PopItemFlag();
+            ImGui::Separator();
+        }
+        if (!screenshot->vertexOnly) {
+            ImGui::PushItemFlag(ImGuiItemFlags_SelectableDontClosePopup, true);
+            ImGui::MenuItem("Flip Projected X", nullptr, &screenshot->flipX);
+            ImGui::PopItemFlag();
+            ImGui::PushItemFlag(ImGuiItemFlags_SelectableDontClosePopup, true);
+            ImGui::MenuItem("Flip Projected Y", nullptr, &screenshot->flipY);
+            ImGui::PopItemFlag();
+            // ImGui::PushItemFlag(ImGuiItemFlags_SelectableDontClosePopup, true);
+            // ImGui::MenuItem("Capture Flat Triangles (Unprojected 2D Triangles)", nullptr, &screenshot->captureFlatTris);
+            // ImGui::PopItemFlag();
+            ImGui::PushItemFlag(ImGuiItemFlags_SelectableDontClosePopup, true);
+            ImGui::MenuItem("Group Objects", nullptr, &screenshot->groupObjects);
+            ImGui::PopItemFlag();
+            if (screenshot->groupObjects) {
+                ImGui::PushItemFlag(ImGuiItemFlags_SelectableDontClosePopup, true);
+                ImGui::MenuItem("Connect to Groups only", nullptr, &screenshot->connectToGroups);
+                ImGui::PopItemFlag();
+            }
+            ImGui::PushItemFlag(ImGuiItemFlags_SelectableDontClosePopup, true);
+            ImGui::MenuItem("Try to Connect to Processed Triangles", nullptr, &screenshot->connectToSubGroups);
+            ImGui::PopItemFlag();
+            ImGui::PushItemFlag(ImGuiItemFlags_SelectableDontClosePopup, true);
+            ImGui::MenuItem("Disable Backface Culling", nullptr, &screenshot->doubleSided);
+            ImGui::PopItemFlag();
+            ImGui::PushItemFlag(ImGuiItemFlags_SelectableDontClosePopup, true);
+            ImGui::MenuItem("Disable Fog", nullptr, &screenshot->disableFog);
+            ImGui::PopItemFlag();
+            ImGui::PushItemFlag(ImGuiItemFlags_SelectableDontClosePopup, true);
+            ImGui::MenuItem("Save Images as BMP", nullptr, &screenshot->bmpImages);
+            ImGui::PopItemFlag();
+            if (!screenshot->bmpImages) {
+                ImGui::PushItemFlag(ImGuiItemFlags_SelectableDontClosePopup, true);
+                ImGui::MenuItem("Black is Transparent", nullptr, &screenshot->blackIsTrans);
+                ImGui::PopItemFlag();
+            }
+            // ImGui::PushItemFlag(ImGuiItemFlags_SelectableDontClosePopup, true);
+            // ImGui::MenuItem("Experimental Capture (Tries to Capture Vertices that don't go thru Projection)", nullptr,
+            //                &screenshot->experimentalCapture);
+            // ImGui::PopItemFlag();
+        }
+        ImGui::Separator();
+        if (ImGui::MenuItem("Take 3D Screenshot", nullptr, nullptr)) {
+            screenshotSelectDirectory.windowOpen = true;
+        }
+        ImGui::EndMenu();
+    }
+    if (ImGui::BeginMenu("Cheats")) {
+        Gameshark* gameshark = Gameshark::getInstance();
+        if (gameshark->gamesharkCheats.size()) {
+            for (auto it = gameshark->gamesharkCheats.begin(); it != gameshark->gamesharkCheats.end(); it++) {
+                ImGui::PushItemFlag(ImGuiItemFlags_SelectableDontClosePopup, true);
+                ImGui::MenuItem(it->name.c_str(), nullptr, &it->enabled);
+                ImGui::PopItemFlag();
+            }
+            ImGui::Separator();
+            ImGui::PushItemFlag(ImGuiItemFlags_SelectableDontClosePopup, true);
+            if (ImGui::Button("Clear Cheats")) {
+                gameshark->gamesharkCheats.clear();
+            }
+            ImGui::PopItemFlag();
+        } else {
+            ImGui::Text("No Cheats Loaded");
+        }
+        ImGui::EndMenu();
+    }
+
     if (ImGui::BeginMenu("Help")) {
         ImGui::MenuItem("About", nullptr, &aboutHelp.aboutWindowOpen);
         ImGui::EndMenu();
@@ -288,6 +423,9 @@ void GUI::render(std::unique_ptr<System>& sys) {
 
         // File
         openFile.displayWindows();
+
+        // Screenshot
+        screenshotSelectDirectory.displayWindows();
 
         // Debug
         if (showKernelWindow) kernelWindow(sys.get());

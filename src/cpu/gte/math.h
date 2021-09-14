@@ -23,7 +23,7 @@ struct Vector {
     Vector(X x, Y y, Z z) : x(x), y(y), z(z) {}
 
     template <class Archive>
-    void serialize(Archive& ar) {
+    void serialize(Archive &ar) {
         ar(x, y, z);
     }
 };
@@ -35,4 +35,23 @@ struct Color {
     int32_t g = 0;
     int32_t b = 0;
 };
+
+int isin(int x);
+
+int icos(int x);
+
+Matrix getIdentity();
+
+Matrix mulMatrix(Matrix &matrixA, Matrix &matrixB);
+
+Matrix rotMatrix(Vector<int16_t> angles);
+
+Matrix rotMatrixX(int16_t angle);
+
+Matrix rotMatrixY(int16_t angle);
+
+Matrix rotMatrixZ(int16_t angle);
+
+Vector<int32_t> applyMatrix(Matrix &matrix, Vector<int32_t> &vector);
+
 };  // namespace gte
