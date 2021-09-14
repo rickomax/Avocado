@@ -3,6 +3,8 @@
 #include <imgui.h>
 #include <imgui_internal.h>
 #include <platform/windows/utils/platform_tools.h>
+#include <utils/free_cam.h>
+
 #include "config.h"
 #include "imgui/imgui_impl_opengl3.h"
 #include "imgui/imgui_impl_sdl.h"
@@ -241,39 +243,39 @@ void GUI::mainMenu(std::unique_ptr<System>& sys) {
         ImGui::EndMenu();
     }
     if (ImGui::BeginMenu("Free Camera")) {
-        Screenshot* screenshot = screenshot->getInstance();
+        FreeCamera* free_camera = FreeCamera::getInstance();
         ImGui::PushItemFlag(ImGuiItemFlags_SelectableDontClosePopup, true);
-        ImGui::MenuItem("Enabled", nullptr, &screenshot->freeCamEnabled);
+        ImGui::MenuItem("Enabled", nullptr, &free_camera->enabled);
         ImGui::PopItemFlag();
         ImGui::Separator();
-        ImGui::SliderInt("Base Rotation X", &screenshot->base_rotationX, -180, 180);
-        ImGui::SliderInt("Base Rotation Y", &screenshot->base_rotationY, -180, 180);
-        ImGui::SliderInt("Base Rotation Z", &screenshot->base_rotationZ, -180, 180);
+        ImGui::SliderInt("Base Rotation X", &free_camera->base_rotationX, -180, 180);
+        ImGui::SliderInt("Base Rotation Y", &free_camera->base_rotationY, -180, 180);
+        ImGui::SliderInt("Base Rotation Z", &free_camera->base_rotationZ, -180, 180);
         ImGui::PushItemFlag(ImGuiItemFlags_SelectableDontClosePopup, true);
         if (ImGui::Button("Set Current Rotation as Base")) {
-            screenshot->saveBase();
+            free_camera->saveBase();
         }
         ImGui::PopItemFlag();
         ImGui::Separator();
-        ImGui::SliderInt("Speed", &screenshot->cameraSpeed, 1, 500);
+        ImGui::SliderInt("Speed", &free_camera->cameraSpeed, 1, 500);
         ImGui::Separator();
-        ImGui::SliderInt("Rotation X", &screenshot->rotationX, -180, 180);
-        ImGui::SliderInt("Rotation Y", &screenshot->rotationY, -180, 180);
-        ImGui::SliderInt("Rotation Z", &screenshot->rotationZ, -180, 180);
-        ImGui::InputInt("Translation X", &screenshot->translationX);
-        ImGui::InputInt("Translation Y", &screenshot->translationY);
-        ImGui::InputInt("Translation Z", &screenshot->translationZ);
-        ImGui::SliderInt("Projection Distance", &screenshot->translationH, -1000, 1000);
+        ImGui::SliderInt("Rotation X", &free_camera->rotationX, -180, 180);
+        ImGui::SliderInt("Rotation Y", &free_camera->rotationY, -180, 180);
+        ImGui::SliderInt("Rotation Z", &free_camera->rotationZ, -180, 180);
+        ImGui::InputInt("Translation X", &free_camera->translationX);
+        ImGui::InputInt("Translation Y", &free_camera->translationY);
+        ImGui::InputInt("Translation Z", &free_camera->translationZ);
+        ImGui::SliderInt("Projection Distance", &free_camera->translationH, -1000, 1000);
         ImGui::Separator();
         ImGui::PushItemFlag(ImGuiItemFlags_SelectableDontClosePopup, true);
         if (ImGui::Button("Reset")) {
-            screenshot->resetMatrices();
+            free_camera->resetMatrices();
         }
         ImGui::PopItemFlag();
         ImGui::EndMenu();
     }
     if (ImGui::BeginMenu("3D Screenshot")) {
-        Screenshot* screenshot = screenshot->getInstance();
+        Screenshot* screenshot = Screenshot::getInstance();
         ImGui::SliderInt("Frames to Capture", &screenshot->captureFrames, 1, 20);
         ImGui::Separator();
         ImGui::SliderInt("Horizontal Scale (%)", &screenshot->horizontalScale, 1, 1000);
@@ -369,6 +371,7 @@ void GUI::mainMenu(std::unique_ptr<System>& sys) {
         }
         ImGui::EndMenu();
     }
+
     if (ImGui::BeginMenu("Help")) {
         ImGui::MenuItem("About", nullptr, &aboutHelp.aboutWindowOpen);
         ImGui::EndMenu();

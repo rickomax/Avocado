@@ -69,7 +69,7 @@ void GPU::drawTriangle(const primitive::Triangle& triangle) {
             flags |= Vertex::Flags::SemiTransparency;
             flags |= static_cast<int>(triangle.transparency) << 5;
         }
-        Screenshot* screenshot = screenshot->getInstance();
+        Screenshot* screenshot = Screenshot::getInstance();
         if (screenshot->debug || screenshot->enabled) {
             ivec2 positions[3] = {triangle.v[0].pos, triangle.v[1].pos, triangle.v[2].pos};
             RGB colors[3] = {triangle.v[0].color, triangle.v[1].color, triangle.v[2].color};
@@ -288,7 +288,7 @@ void GPU::cmdPolygon(PolygonArgs arg) {
 
     // uint32_t textureIndex;
 
-    Screenshot* screenshot = screenshot->getInstance();
+    Screenshot* screenshot = Screenshot::getInstance();
     // if (screenshot->getEnabled()) {
     //     int32_t minX = 0;
     //     int32_t minY = 0;
@@ -454,7 +454,7 @@ void GPU::cmdRectangle(RectangleArgs arg) {
         rect.texpage = ivec2(gp0_e1.texturePageBaseX * 64, gp0_e1.texturePageBaseY * 256);
     }
 
-    // Screenshot* screenshot = screenshot->getInstance();
+    // Screenshot* screenshot = Screenshot::getInstance();
     // uint32_t textureIndex;
     // if (screenshot->getEnabled()) {
     //    textureIndex
@@ -803,7 +803,7 @@ void GPU::writeGP1(uint32_t data) {
     } else if (command == 0x04) {  // DMA Direction
         dmaDirection = argument & 3;
     } else if (command == 0x05) {  // Start of display area
-        Screenshot* screenshot = screenshot->getInstance();
+        Screenshot* screenshot = Screenshot::getInstance();
         screenshot->flushBuffer(this);
         displayAreaStartX = argument & 0x3ff;
         displayAreaStartY = argument >> 10;

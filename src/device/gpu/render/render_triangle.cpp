@@ -381,7 +381,7 @@ static constexpr rasterizeTriangle_t* rasterizeTriangleDispatchTable[4][2][2][2]
 #undef E
 
 void Render::drawTriangle(gpu::GPU* gpu, const primitive::Triangle& triangle) {
-    Screenshot* screenshot = screenshot->getInstance();
+    Screenshot* screenshot = Screenshot::getInstance();
     if (screenshot->debug || screenshot->enabled) {
         ivec2 positions[3] = {triangle.v[0].pos, triangle.v[1].pos, triangle.v[2].pos};
         RGB colors[3] = {triangle.v[0].color, triangle.v[1].color, triangle.v[2].color};

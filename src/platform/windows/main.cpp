@@ -251,7 +251,7 @@ int main(int argc, char** argv) {
         }
     });
 
-    Screenshot* screenshot = screenshot->getInstance();
+    Screenshot* screenshot = Screenshot::getInstance();
 
     bus.listen<Event::Screenshot::Save>(busToken, [&](auto e) {
         fmt::print("Save screenshot to {}", e.path);

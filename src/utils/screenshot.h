@@ -9,8 +9,6 @@
 #include <stb_image_write.h>
 #include "device/gpu/gpu.h"
 #include "device/gpu/render/texture_utils.h"
-#include "utils/math.h"
-#include "cpu/gte/gte.h"
 #include "device/gpu/render/render.h"
 
 #define MAXATTEMPTS 100
@@ -25,7 +23,7 @@
 #define GETSTRIDE (PAGEBPP * PAGEWIDTH)
 #define GETOFFSET(x, y) (x * PAGEBPP + y * GETSTRIDE)
 //#define GETREGIONOFFSET(x, y) (x + y * gpu::VRAM_WIDTH)
-#define ADJUSTANGLE(degrees) ((degrees % 360 + 360) % 360)
+//#define ADJUSTANGLE(degrees) ((degrees % 360 + 360) % 360)
 
 struct ScreenshotTexture {
     char data[DATACOUNT];
@@ -93,20 +91,17 @@ struct ScreenshotFace {
 };
 
 struct Screenshot {
-   public:
     static Screenshot *getInstance() {
         static Screenshot instance;
         return &instance;
     }
 
-   public:
     std::vector<ScreenshotVertex> vertexBuffer;
     std::vector<ScreenshotFace> faceBuffer;
     std::vector<ScreenshotTexture> textures;
     // uint32_t textureRegions[gpu::VRAM_WIDTH * gpu::VRAM_HEIGHT];
 
     bool enabled = false;
-    int cameraSpeed = 20;
     int depthScale = 100;
     int horizontalScale = 100;
     int verticalScale = 100;
@@ -114,20 +109,9 @@ struct Screenshot {
     bool dontTransform = false;
     bool doubleSided = false;
     bool applyAspectRatio = false;
-    int rotationX = 0;
-    int rotationY = 0;
-    int rotationZ = 0;
-    int translationX = 0;
-    int translationY = 0;
-    int translationZ = 0;
-    int translationH = 0;
-    int base_rotationX = 0;
-    int base_rotationY = 0;
-    int base_rotationZ = 0;
     bool groupObjects = false;
     bool connectToGroups = false;
     bool connectToSubGroups = true;
-    bool freeCamEnabled = false;
     bool bmpImages = false;
     bool blackIsTrans = false;
     bool disableFog = false;
@@ -152,79 +136,6 @@ struct Screenshot {
     const uint32_t *indices;
 
     Screenshot() { fullCleanUp(); }
-
-    void saveBase() {
-        base_rotationX = rotationX;
-        base_rotationY = rotationY;
-        base_rotationZ = rotationZ;
-        rotationX = 0;
-        rotationY = 0;
-        rotationZ = 0;
-    }
-
-    void resetMatrices() {
-        translationX = 0;
-        translationY = 0;
-        translationZ = 0;
-        rotationX = 0;
-        rotationY = 0;
-        rotationZ = 0;
-        base_rotationX = 0;
-        base_rotationY = 0;
-        base_rotationZ = 0;
-        translationH = 0;
-        base_rotationX = 0;
-        base_rotationY = 0;
-        base_rotationZ = 0;
-    }
-
-    gte::Matrix getInvRotation() {
-        gte::Matrix baseRotation = gte::rotMatrix(
-            gte::Vector<int16_t>((-base_rotationX / 360.0f) * 4096, (-base_rotationY / 360.0f) * 4096, (-base_rotationZ / 360.0f) * 4096));
-        gte::Matrix preRotation = gte::rotMatrix(
-            gte::Vector<int16_t>((-rotationX / 360.0f) * 4096, (-rotationY / 360.0f) * 4096, (-rotationZ / 360.0f) * 4096));
-        gte::Matrix postRotation = gte::mulMatrix(baseRotation, preRotation);
-        return postRotation;
-    }
-
-    gte::Matrix getRotation() {
-        gte::Matrix baseRotation = gte::rotMatrix(gte::Vector<int16_t>((ADJUSTANGLE(base_rotationX) / 360.0f) * 4096,
-                                                                       (ADJUSTANGLE(base_rotationY) / 360.0f) * 4096,
-                                                                       (ADJUSTANGLE(base_rotationZ) / 360.0f) * 4096));
-        gte::Matrix preRotation = gte::rotMatrix(gte::Vector<int16_t>(
-            (ADJUSTANGLE(rotationX) / 360.0f) * 4096, (ADJUSTANGLE(rotationY) / 360.0f) * 4096, (ADJUSTANGLE(rotationZ) / 360.0f) * 4096));
-        gte::Matrix postRotation = gte::mulMatrix(preRotation, baseRotation);
-        return postRotation;
-    }
-
-    void processRotTrans(gte::Matrix &rotation, gte::Vector<int32_t> &translation, gte::Matrix *postRotation,
-                         gte::Vector<int32_t> *postTranslation) {
-        // float xScale = sqrtf(rotation[0][1] * rotation[0][1] + rotation[0][2] * rotation[0][2] + rotation[0][3] * rotation[0][3]);
-        // float yScale = sqrtf(rotation[1][1] * rotation[1][1] + rotation[1][2] * rotation[1][2] + rotation[1][3] * rotation[1][3]);
-        // float zScale = sqrtf(rotation[2][1] * rotation[2][1] + rotation[2][2] * rotation[2][2] + rotation[2][3] * rotation[2][3]);
-        // float uScale = 1.0f;
-        // sqrtf(xScale * xScale + yScale * yScale + zScale * zScale) / 4096.0f / 3.5f;
-        // int32_t finalTranslationX = translationX * uScale;
-        // int32_t finalTranslationY = translationY * uScale;
-        // int32_t finalTranslationZ = translationZ * uScale;
-        gte::Matrix customRotation = getRotation();
-        *postRotation = gte::mulMatrix(customRotation, rotation);
-        gte::Vector<int32_t> preTranslation
-            = gte::Vector<int32_t>(translation.x - translationX, translation.y - translationY, translation.z - translationZ);
-        *postTranslation = gte::applyMatrix(customRotation, preTranslation);
-    }
-
-    void processInput(int8_t x, int8_t y, int8_t z, int8_t lx, int8_t ly, int8_t lz) {
-        rotationX = rotationX + ly * 2;
-        rotationY = rotationY + lx * 2;
-        rotationZ = rotationZ + lz * 2;
-        gte::Matrix invertRotation = getInvRotation();
-        gte::Vector<int32_t> v(x * cameraSpeed, y * cameraSpeed, z * cameraSpeed);
-        gte::Vector<int32_t> tv = gte::applyMatrix(invertRotation, v);
-        translationX += tv.x;
-        translationY += tv.y;
-        translationZ += tv.z;
-    }
 
     uint32_t getTextureIndex(uint32_t tpageX, uint32_t tpageY) {
         tpageX = tpageX & 1023;

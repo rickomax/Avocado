@@ -40,26 +40,18 @@ int isin(int x);
 
 int icos(int x);
 
-gte::Matrix getIdentity();
+Matrix getIdentity();
 
-gte::Matrix mulMatrix(gte::Matrix &matrixA, gte::Matrix &matrixB);
+Matrix mulMatrix(Matrix &matrixA, Matrix &matrixB);
 
-gte::Matrix invMatrix(gte::Matrix &matrix);
+Matrix rotMatrix(Vector<int16_t> angles);
 
-gte::Matrix rotMatrix(gte::Vector<int16_t> angles);
+Matrix rotMatrixX(int16_t angle);
 
-gte::Matrix rotMatrixX(int16_t angle);
+Matrix rotMatrixY(int16_t angle);
 
-gte::Matrix rotMatrixY(int16_t angle);
+Matrix rotMatrixZ(int16_t angle);
 
-gte::Matrix rotMatrixZ(int16_t angle);
-
-gte::Vector<int32_t> applyMatrix(gte::Matrix &matrix, gte::Vector<int32_t> &vector);
-
-gte::Vector<int32_t> transVector(gte::Vector<int32_t> &vector, int32_t x, int32_t y, int32_t z);
-
-gte::Vector<int32_t> normalizeVector(gte::Vector<int32_t> &vector);
-
-gte::Vector<int32_t> crossVector(gte::Vector<int32_t> &vectorA, gte::Vector<int32_t> &vectorB);
+Vector<int32_t> applyMatrix(Matrix &matrix, Vector<int32_t> &vector);
 
 };  // namespace gte
